@@ -1,0 +1,10 @@
+{
+  "name": "GSGolfSolitaire-Editor",
+  "references": [
+    "GSGolfSolitaire"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}

@@ -120,11 +120,6 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 114196787414377408, guid: 2c547254946922f40a64d3f40e66c23c,
-        type: 2}
-      propertyPath: Children.Array.size
-      value: 9
-      objectReference: {fileID: 0}
     - target: {fileID: 4437767805292466, guid: 2c547254946922f40a64d3f40e66c23c, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -161,21 +156,6 @@ Prefab:
       propertyPath: m_Name
       value: Golf Solitaire Module
       objectReference: {fileID: 0}
-    - target: {fileID: 114196787414377408, guid: 2c547254946922f40a64d3f40e66c23c,
-        type: 2}
-      propertyPath: ChildRowLength
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 65237844413530876, guid: 2c547254946922f40a64d3f40e66c23c,
-        type: 2}
-      propertyPath: m_Size.y
-      value: 0.001
-      objectReference: {fileID: 0}
-    - target: {fileID: 114196787414377408, guid: 2c547254946922f40a64d3f40e66c23c,
-        type: 2}
-      propertyPath: Children.Array.data[8]
-      value: 
-      objectReference: {fileID: 1830949199}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 2c547254946922f40a64d3f40e66c23c, type: 2}
   m_IsPrefabParent: 0
@@ -412,9 +392,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1830949199 stripped
-MonoBehaviour:
-  m_PrefabParentObject: {fileID: 114823861857197068, guid: 2c547254946922f40a64d3f40e66c23c,
-    type: 2}
-  m_PrefabInternal: {fileID: 173477906}
-  m_Script: {fileID: 1702003387, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}

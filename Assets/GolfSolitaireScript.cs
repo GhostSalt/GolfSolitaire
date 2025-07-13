@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
+using Wawa.DDL;
+using Wawa.Optionals;
+using System.Text.RegularExpressions;
 using Rnd = UnityEngine.Random;
-using UnityEngine.XR.WSA.Input;
 
 public class GolfSolitaireScript : MonoBehaviour
 {
@@ -22,6 +24,8 @@ public class GolfSolitaireScript : MonoBehaviour
     public GameObject NoMoreMoves;
     public TextMesh[] OverlayTexts;
     public SpriteRenderer[] JokerRends;
+    public MeshRenderer BG;
+    public Material[] BGMats;
 
     private List<SpriteRenderer> CardRendsOnTheTable = new List<SpriteRenderer>();
     private List<int> CardIxsOnTheTable = new List<int>();
@@ -31,6 +35,71 @@ public class GolfSolitaireScript : MonoBehaviour
     private int[] TableOffsets = new int[] { 28, 28, 28, 28, 28, 28, 28 };
     private int JokerCount, ReadyToContinue, RemainingCards, StockIx;
     private bool CannotContinue, CannotPress = true, InEndgame, NoMoreCards, Solved;
+    private Settings _Settings;
+
+    class Settings
+    {
+        public bool HardMode = false;
+        public bool NoBonuses = false;
+    }
+
+    void GetSettings()
+    {
+        var SettingsConfig = new ModConfig<Settings>("GolfSolitaire");
+        _Settings = SettingsConfig.Settings; // This reads the settings from the file, or creates a new file if it does not exist
+        SettingsConfig.Settings = _Settings; // This writes any updates or fixes if there's an issue with the file
+        HardMode = _Settings.HardMode;
+        NoBonuses = _Settings.NoBonuses;
+        Debug.LogFormat("[Golf Solitaire #{0}] Hard Mode is {1}. Joker bonuses are {2}.", _moduleID, HardMode ? "active" : "disabled", NoBonuses ? "disabled" : "active");
+    }
+
+    private bool HardMode, NoBonuses;
+
+    void SortOutMissionDescription()
+    {
+        string description = Application.isEditor ? "" : Missions.Description.UnwrapOr("");
+        var matches = Regex.Matches(description, @"^(?:///? ?)? ?\[Golf ?Solitaire\] (.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (matches.Count == 0)
+        {
+            Debug.LogFormat("[Golf Solitaire #{0}] Either nothing has been specified by the mission description, or this module is being played in Free Play.", _moduleID);
+            GetSettings();
+            if (Application.isEditor)
+            {
+                HardMode = false;
+                NoBonuses = false;
+            }
+            return;
+        }
+        if (Application.isEditor)
+        {
+            HardMode = false;
+            NoBonuses = false;
+        }
+        for (int i = 0; i < matches.Count; i++)
+        {
+            if (matches[i].Groups[1].Value.ToLowerInvariant() == "bonuses on")
+            {
+                NoBonuses = false;
+                Debug.LogFormat("[Golf Solitaire #{0}] Joker bonuses have been enabled, as specified by the mission description.", _moduleID);
+            }
+            if (matches[i].Groups[1].Value.ToLowerInvariant() == "bonuses off")
+            {
+                NoBonuses = true;
+                Debug.LogFormat("[Golf Solitaire #{0}] Joker bonuses have been disabled, as specified by the mission description.", _moduleID);
+            }
+            if (matches[i].Groups[1].Value.ToLowerInvariant() == "hard off")
+            {
+                HardMode = false;
+                Debug.LogFormat("[Golf Solitaire #{0}] Hard Mode has been disabled, as specified by the mission description.", _moduleID);
+            }
+            if (matches[i].Groups[1].Value.ToLowerInvariant() == "hard on")
+            {
+                HardMode = true;
+                Debug.LogFormat("[Golf Solitaire #{0}] Hard Mode has been enabled, as specified by the mission description.", _moduleID);
+            }
+        }
+        Debug.LogFormat("[Golf Solitaire #{0}] Hard Mode is {1}. Joker bonuses are {2}.", _moduleID, HardMode ? "active" : "disabled", NoBonuses ? "disabled" : "active");
+    }
 
     private IEnumerable<List<int>> FindSeriesOfPlays(List<int> cardIxsOnTheTableTemp, int[] tableOffsetsTemp, int stockIxTemp)
     {
@@ -58,6 +127,8 @@ public class GolfSolitaireScript : MonoBehaviour
     {
         if (stockIx == 52 || ix == 52)
             return true;
+        if ((stockIx % 13 == 12 || (ix % 13 == 12 && stockIx % 13 != 11)) && HardMode)
+            return false;
         var diff = Mathf.Abs((ix % 13) - (stockIx % 13));
         return diff == 1 || diff == 12;
     }
@@ -98,6 +169,7 @@ public class GolfSolitaireScript : MonoBehaviour
     void Awake()
     {
         _moduleID = _moduleIdCounter++;
+
         for (int i = 0; i < Selectables.Length; i++)
         {
             int x = i;
@@ -115,6 +187,9 @@ public class GolfSolitaireScript : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        SortOutMissionDescription();
+
+        BG.material = BGMats[HardMode ? 1 : 0];
         for (int i = 0; i < Selectables.Length; i++)
             Selectables[i].transform.localScale = Vector3.zero;
         TemplateCard.gameObject.SetActive(false);
@@ -127,12 +202,6 @@ public class GolfSolitaireScript : MonoBehaviour
         OverlayBG.transform.parent.localScale = Vector3.zero;
         StartCoroutine(SpinJokers());
         Initialise();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     void FrontCardPress(int pos)
@@ -310,9 +379,14 @@ public class GolfSolitaireScript : MonoBehaviour
             yield return null;
             timer += Time.deltaTime;
         }
-        StartCoroutine(TrackReadiness());
+
         StartCoroutine(ResetTable());
-        StartCoroutine(ShowStats());
+        if (!NoBonuses)
+        {
+            StartCoroutine(TrackReadiness());
+            StartCoroutine(ShowStats());
+        }
+
         timer = 0;
         while (timer < showTextBoxDur)
         {
@@ -609,11 +683,15 @@ public class GolfSolitaireScript : MonoBehaviour
         CardIxsOnTheTable.RemoveAt(CardIxsOnTheTable.Count() - 1);
         if (flagReadiness)
             ReadyToContinue++;
-        else
+        if (!flagReadiness || NoBonuses)
         {
             for (int i = 0; i < Selectables.Length - 2; i++)
-                if (TableOffsets[i] >= 0) Selectables[i].transform.localScale = Vector3.one;
-            if (!NoMoreCards) Selectables[7].transform.localScale = Vector3.one;
+            {
+                Selectables[i].transform.localPosition = new Vector3(Selectables[i].transform.localPosition.x, Selectables[i].transform.localPosition.y, -0.08f);
+                Selectables[i].GetComponentsInChildren<SpriteRenderer>(true).Where(x => x.name == "Highlight").First().sortingOrder = 13;
+            }
+            for (int i = 0; i < Selectables.Length - 1; i++)
+                Selectables[i].transform.localScale = Vector3.one;
             CannotPress = false;
         }
     }
@@ -756,7 +834,7 @@ public class GolfSolitaireScript : MonoBehaviour
             restart:
             while (CannotPress)
                 yield return true;
-            if (ReadyToContinue == 2)
+            if (ReadyToContinue == 2 && !NoBonuses)
             {
                 yield return null;
                 Selectables[8].OnInteract();
@@ -772,7 +850,6 @@ public class GolfSolitaireScript : MonoBehaviour
                     yield return null;
                     while (CannotPress)
                     {
-                        Debug.Log("Waiting for a card press, time " + Time.time);
                         yield return null;
                         if (InEndgame)
                             goto restart;

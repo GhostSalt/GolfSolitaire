@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 615501dbe4f3fe94fbf4b564abb10237, type: 3}
+  m_Name: ModConfig
+  m_EditorClassIdentifier: 
+  id: GSGolfSolitaire
+  title: Golf Solitaire
+  author: GhostSalt
+  description: "A good sequel to Foxtrot Solitaire \u2014 I can\u2019t wait for Hotel
+    Solitaire!\n\nMade this a while ago, but never released it because of a mod settings
+    bug. I'm very happy with how it turned out!\n\nhark! thine module hath twitch
+    plays support! hear ye!"
+  version: 1.0
+  outputFolder: build
+  previewImage: {fileID: 2800000, guid: f32b5cea526906e4b82c6697fee11704, type: 3}
